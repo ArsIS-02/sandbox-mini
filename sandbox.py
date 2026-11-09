@@ -32,6 +32,7 @@ def build_report(raw_dir, sample_name):
         "urls": read_lines(d / "urls"),
         "ips": read_lines(d / "ips"),
         "interesting_strings": read_lines(d / "interesting"),
+        "yara": read_lines(d / "yara"),
         "imports": read_lines(d / "imports"),
         "net_attempts": read_lines(d / "net_attempts"),
         "fs_ops": read_lines(d / "fs_ops"),
@@ -43,6 +44,13 @@ def build_report(raw_dir, sample_name):
 def verdict(rep):
     """Эвристика подозрительности: (level, reasons)."""
     reasons = []
+    yara_hits = [y for y in rep.get("yara", []) if not y.startswith(("EICAR", "UPX"))]
+    if rep.get("yara"):
+        # EICAR — контроль конвейера, UPX — лишь упаковка: их не считаем угрозой сами по себе
+        if yara_hits:
+            reasons.append(f"YARA: {', '.join(yara_hits[:5])}")
+        else:
+            reasons.append(f"YARA (контекст): {', '.join(rep['yara'][:5])}")
     if rep["net_attempts"]:
         reasons.append(f"сетевые обращения: {', '.join(rep['net_attempts'][:5])}")
     suspicious_fs = [p for p in rep["fs_ops"]
@@ -104,6 +112,7 @@ def main():
         "sb_file": rep["file"], "sb_sha256": rep["sha256"],
         "sb_type": rep["filetype"][:80], "sb_ran": rep["ran"],
         "sb_net_attempts": len(rep["net_attempts"]), "sb_urls": len(rep["urls"]),
+        "sb_yara": ",".join(rep.get("yara", []))[:200],
         "sb_report": str(out),
     })
     print(json.dumps(rep, ensure_ascii=False, indent=1))

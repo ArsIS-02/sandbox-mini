@@ -53,3 +53,10 @@ python3 ~/sandbox/sandbox.py /path/to/sample
 ```bash
 python -m pytest tests/ -v
 ```
+
+## YARA
+
+Образ включает YARA и вендоренный набор правил (`rules/*.yar`, при сборке
+склеиваются в `/opt/all-rules.yar` с проверкой компиляции). Совпадения
+попадают в отчёт (`yara`), вердикт и GELF-поле `sb_yara`.
+EICAR и UPX считаются контекстом, остальные правила — сильный сигнал.

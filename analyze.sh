@@ -9,6 +9,13 @@ mkdir -p "$OUT"
 file -b "$SAMPLE" > "$OUT/filetype"
 sha256sum "$SAMPLE" | cut -d' ' -f1 > "$OUT/sha256"
 
+# YARA: статический прогон по вендоренным правилам
+if [ -f /opt/all-rules.yar ]; then
+  yara -f /opt/all-rules.yar "$SAMPLE" 2>/dev/null \
+    | awk '{print $1}' | sort -u > "$OUT/yara" || true
+fi
+touch "$OUT/yara"
+
 # Статика: интересные строки
 strings -n 6 "$SAMPLE" > "$OUT/strings_all" || true
 grep -aoE 'https?://[^ "]*' "$OUT/strings_all" | sort -u | head -20 > "$OUT/urls" || true

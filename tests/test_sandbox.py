@@ -58,3 +58,24 @@ def test_verdict_ip_literal_url_is_suspicious():
            "urls": ["http://45.155.20.10/payload.sh"]}
     level, reasons = verdict(rep)
     assert level == 3
+
+
+def test_yara_in_report_and_verdict():
+    with tempfile.TemporaryDirectory() as t:
+        d = make_raw(t, {
+            "sha256": "bb22\n", "filetype": "ASCII text\n", "ran": "0\n",
+            "yara": "Webshell_PHP_Generic\nEICAR_Test_File\n",
+        })
+        rep = build_report(d, "shell.php")
+        assert rep["yara"] == ["Webshell_PHP_Generic", "EICAR_Test_File"]
+        level, reasons = verdict(rep)
+        assert any("YARA" in r for r in reasons)
+        assert level == 3
+
+
+def test_verdict_no_yara_no_reason():
+    with tempfile.TemporaryDirectory() as t:
+        d = make_raw(t, {"sha256": "cc\n", "filetype": "data\n", "ran": "0\n"})
+        rep = build_report(d, "clean.bin")
+        level, reasons = verdict(rep)
+        assert level == 5 and reasons == []
